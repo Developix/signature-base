@@ -50,54 +50,157 @@ rule WEBSHELL_ASPX_Compiled_Sharepoint_Drop_CVE_2025_53770_Jul25_2 {
       or 4 of them
 }
 
-rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1 {
-   meta:
-      description = "Detects URIs accessed during the exploitation of SharePoint RCE vulnerability CVE-2025-53770"
-      author = "Florian Roth"
-      reference = "https://research.eye.security/sharepoint-under-siege/"
-      date = "2025-07-20"
-      modified = "2025-07-23"
-      score = 75
-   strings:
-      $sa1 = /POST \/_layouts\/1[0-9]\/ToolPane\.aspx/ ascii wide nocase
-      $sa2 = "DisplayMode=Edit&a=/ToolPane.aspx" ascii wide
-
-      $sb1 = /GET \/_layouts\/1[0-9]\/spinstall/ ascii wide  // specific
-      $sb2 = "/_layouts/SignOut.aspx 200" ascii wide nocase
-   condition:
-      (@sa2 - @sa1) < 700  // unknown how specific with the DisplayMode=Edit parameter
-      or (@sb2 - @sb1) < 700  // specific combination
-      or (@sb2 - @sa1) < 700  // most generic combination
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1_ToolPane_EditMode
+{
+    meta:
+        description = "Detects POST access to ToolPane.aspx with DisplayMode=Edit"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 75
+    strings:
+        $a1 = /POST \/_layouts\/1[0-9]\/ToolPane\.aspx/ ascii wide nocase
+        $a2 = "DisplayMode=Edit&a=/ToolPane.aspx" ascii wide
+    condition:
+        (@a2 - @a1) < 700
 }
 
-rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2 {
-   meta:
-      description = "Detects URIs accessed during the exploitation of SharePoint RCE vulnerability CVE-2025-53770"
-      author = "Florian Roth"
-      reference = "https://research.eye.security/sharepoint-under-siege/"
-      date = "2025-07-20"
-      modified = "2025-07-24"
-      hash = "30955794792a7ce045660bb1e1917eef36f1d5865891b8110bf982382b305b27"
-      hash = "b336f936be13b3d01a8544ea3906193608022b40c28dd8f1f281e361c9b64e93"
-      score = 70
-   strings:
-      $x1 = "-EncodedCommand JABiAGEAcwBlADYANABTAHQAcgBpAG4AZwAgAD0" ascii wide
-      $x2 = "TEMPLATE\\LAYOUTS\\spinstall" ascii wide
-      $x3 = "TEMPLATE\\LAYOUTS\\ghostfile" ascii wide
-      $x4 = "TEMPLATE\\LAYOUTS\\1.css" ascii wide
-      $x5 = "Mozilla/5.0+(Windows+NT+10.0;+Win64;+x64;+rv:120.0)+Gecko/20100101+Firefox/120.0 /_layouts/SignOut.aspx" ascii wide
-
-      // Encoded code from the dropper (UTF-16 & Base64 encoded)
-      // MICROS~1\WEBSER~1\16\TEMPLATE\LAYOUTS\
-      // as found in sample f36a11d196db49c80123adf126b78609d0b2f5a0d9850163b6dda27048d17cbc
-      $xe1 = "TQBJAEMAUgBPAFMAfgAxAFwAVwBFAEIAUwBFAFIAfgAxAFwAMQA2AFwAVABFAE0AUABMAEEAVABFAFwATABBAFkATwBVAFQAUwBcA"
-      $xe2 = "0ASQBDAFIATwBTAH4AMQBcAFcARQBCAFMARQBSAH4AMQBcADEANgBcAFQARQBNAFAATABBAFQARQBcAEwAQQBZAE8AVQBUAFMAXA"
-      $xe3 = "NAEkAQwBSAE8AUwB+ADEAXABXAEUAQgBTAEUAUgB+ADEAXAAxADYAXABUAEUATQBQAEwAQQBUAEUAXABMAEEAWQBPAFUAVABTAFwA"
-      // MICROS~1\WEBSER~1\15\TEMPLATE\LAYOUTS\
-      $xe4 = "TQBJAEMAUgBPAFMAfgAxAFwAVwBFAEIAUwBFAFIAfgAxAFwAMQA1AFwAVABFAE0AUABMAEEAVABFAFwATABBAFkATwBVAFQAUwBcA"
-      $xe5 = "0ASQBDAFIATwBTAH4AMQBcAFcARQBCAFMARQBSAH4AMQBcADEANQBcAFQARQBNAFAATABBAFQARQBcAEwAQQBZAE8AVQBUAFMAXA"
-      $xe6 = "NAEkAQwBSAE8AUwB+ADEAXABXAEUAQgBTAEUAUgB+ADEAXAAxADUAXABUAEUATQBQAEwAQQBUAEUAXABMAEEAWQBPAFUAVABTAFwA"
-   condition:
-      1 of them
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1_GET_spinstall
+{
+    meta:
+        description = "Detects GET request to /_layouts/1x/spinstall path"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 75
+    strings:
+        $b1 = /GET \/_layouts\/1[0-9]\/spinstall/ ascii wide
+    condition:
+        any of them
 }
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1_SignOut_200
+{
+    meta:
+        description = "Detects HTTP 200 access to /_layouts/SignOut.aspx"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 75
+    strings:
+        $b2 = "/_layouts/SignOut.aspx 200" ascii wide nocase
+    condition:
+        any of them
+}
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1_SignOut_spinstall_combo
+{
+    meta:
+        description = "Detects SignOut and spinstall accessed within 700 bytes"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 75
+    strings:
+        $b1 = /GET \/_layouts\/1[0-9]\/spinstall/ ascii wide
+        $b2 = "/_layouts/SignOut.aspx 200" ascii wide nocase
+    condition:
+        (@b2 - @b1) < 700
+}
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_1_ToolPane_SignOut_combo
+{
+    meta:
+        description = "Detects ToolPane and SignOut accessed close together"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 75
+    strings:
+        $a1 = /POST \/_layouts\/1[0-9]\/ToolPane\.aspx/ ascii wide nocase
+        $b2 = "/_layouts/SignOut.aspx 200" ascii wide nocase
+    condition:
+        (@b2 - @a1) < 700
+}
+
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2_EncodedCommand
+{
+    meta:
+        description = "Detects PowerShell EncodedCommand related to CVE-2025-53770 exploitation"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 70
+    strings:
+        $x1 = "-EncodedCommand JABiAGEAcwBlADYANABTAHQAcgBpAG4AZwAgAD0" ascii wide
+    condition:
+        any of them
+}
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2_SuspiciousPaths
+{
+    meta:
+        description = "Detects suspicious SharePoint LAYOUTS paths"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 70
+    strings:
+        $x2 = "TEMPLATE\\LAYOUTS\\spinstall" ascii wide
+        $x3 = "TEMPLATE\\LAYOUTS\\ghostfile" ascii wide
+        $x4 = "TEMPLATE\\LAYOUTS\\1.css" ascii wide
+    condition:
+        any of them
+}
+
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2_SignOutAccess
+{
+    meta:
+        description = "Detects access to SignOut.aspx with suspicious Firefox user-agent"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 70
+    strings:
+        $x5 = "Mozilla/5.0+(Windows+NT+10.0;+Win64;+x64;+rv:120.0)+Gecko/20100101+Firefox/120.0 /_layouts/SignOut.aspx" ascii wide
+    condition:
+        any of them
+}
+
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2_EncodedDropper16
+{
+    meta:
+        description = "Detects UTF-16 encoded paths from dropper sample (TEMPLATE\\LAYOUTS\\16)"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 70
+    strings:
+        $xe1 = "TQBJAEMAUgBPAFMAfgAxAFwAVwBFAEIAUwBFAFIAfgAxAFwAMQA2AFwAVABFAE0AUABMAEEAVABFAFwATABBAFkATwBVAFQAUwBcA"
+        $xe2 = "0ASQBDAFIATwBTAH4AMQBcAFcARQBCAFMARQBSAH4AMQBcADEANgBcAFQARQBNAFAATABBAFQARQBcAEwAQQBZAE8AVQBUAFMAXA"
+        $xe3 = "NAEkAQwBSAE8AUwB+ADEAXABXAEUAQgBTAEUAUgB+ADEAXAAxADYAXABUAEUATQBQAEwAQQBUAEUAXABMAEEAWQBPAFUAVABTAFwA"
+    condition:
+        any of them
+}
+
+
+rule APT_EXPL_Sharepoint_CVE_2025_53770_ForensicArtefact_Jul25_2_EncodedDropper15
+{
+    meta:
+        description = "Detects UTF-16 encoded paths from dropper sample (TEMPLATE\\LAYOUTS\\15)"
+        author = "Florian Roth"
+        reference = "https://research.eye.security/sharepoint-under-siege/"
+        date = "2025-07-20"
+        score = 70
+    strings:
+        $xe4 = "TQBJAEMAUgBPAFMAfgAxAFwAVwBFAEIAUwBFAFIAfgAxAFwAMQA1AFwAVABFAE0AUABMAEEAVABFAFwATABBAFkATwBVAFQAUwBcA"
+        $xe5 = "0ASQBDAFIATwBTAH4AMQBcAFcARQBCAFMARQBSAH4AMQBcADEANQBcAFQARQBNAFAATABBAFQARQBcAEwAQQBZAE8AVQBUAFMAXA"
+        $xe6 = "NAEkAQwBSAE8AUwB+ADEAXABXAEUAQgBTAEUAUgB+ADEAXAAxADUAXABUAEUATQBQAEwAQQBUAEUAXABMAEEAWQBPAFUAVABTAFwA"
+    condition:
+        any of them
+}
+
 
